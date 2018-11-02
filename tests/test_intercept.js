@@ -624,6 +624,7 @@ test("post with reply callback, uri, and request body", function(t) {
     , method: 'POST'
     , path: '/echo'
     , port: 80
+    , body: input
   }, function(res) {
     res.on('end', function() {
       scope.done();
@@ -650,6 +651,7 @@ test("post with regexp as spec", function(t) {
         , method: 'POST'
         , path: '/echo'
         , port: 80
+        , body: 'key=val'
     }, function(res) {
         res.on('end', function() {
             scope.done();
@@ -678,6 +680,7 @@ test("post with function as spec", function(t) {
         , method: 'POST'
         , path: '/echo'
         , port: 80
+        , body: 'key=val'
     }, function(res) {
         res.on('end', function() {
             scope.done();
@@ -706,6 +709,7 @@ test("post with chaining on call", function(t) {
     , method: 'POST'
     , path: '/echo'
     , port: 80
+    , body: 'key=val'
   }, function(res) {
     res.on('end', function() {
       scope.done();
@@ -738,6 +742,7 @@ test("reply with callback and filtered path and body", function(t) {
     , method: 'POST'
     , path: '/original/path'
     , port: 80
+    , body: '*'
   }, function(res) {
    t.equal(res.statusCode, 200);
    res.on('end', function() {
@@ -1203,6 +1208,7 @@ test("body data is differentiating", function(t) {
       , method: 'POST'
       , path: '/'
       , port: 80
+      , body: 'abc'
     }, function(res) {
        var dataCalled = false;
        t.equal(res.statusCode, 200);
@@ -1226,6 +1232,7 @@ test("body data is differentiating", function(t) {
       , method: 'POST'
       , path: '/'
       , port: 80
+      , body: 'def'
     }, function(res) {
        var dataCalled = false;
        t.equal(res.statusCode, 200);
@@ -1594,6 +1601,7 @@ test("filter body with function", function(t) {
     , method: 'POST'
     , path: '/'
     , port: 80
+    , body: 'mamma tua'
   }, function(res) {
    t.equal(res.statusCode, 200);
    res.on('end', function() {
@@ -1620,6 +1628,7 @@ test("filter body with regexp", function(t) {
     , method: 'POST'
     , path: '/'
     , port: 80
+    , body: 'mamma nostra'
   }, function(res) {
    t.equal(res.statusCode, 200);
    res.on('end', function() {
@@ -2089,6 +2098,7 @@ test("can use ClientRequest using POST", function(t) {
       host: "www2.clientrequester.com"
     , path: '/posthere/please'
     , method: 'POST'
+    , body: 'heyhey this is the body'
   });
   req.write('heyhey this is the body');
   req.end();
@@ -2698,7 +2708,8 @@ test('post with object', function(t) {
     hostname: 'uri',
     port: 80,
     method: "POST",
-    path: '/claim'
+    path: '/claim',
+    body: {some_data: "something"}
   }, function(res) {
     scope.done();
     t.end();
@@ -3570,6 +3581,7 @@ test("write callback called", function(t) {
                            , method: 'POST'
                            , path: '/'
                            , port: 80
+                           , body: 'mamma nostra'
                          }, function(res) {
     t.equal(callbackCalled, true);
     t.equal(res.statusCode, 200);
@@ -3600,6 +3612,7 @@ test("end callback called", function(t) {
                            , method: 'POST'
                            , path: '/'
                            , port: 80
+                           , body: 'mamma nostra'
                          }, function(res) {
     t.equal(callbackCalled, true);
     t.equal(res.statusCode, 200);
@@ -3629,6 +3642,7 @@ test("finish event fired before end event (bug-139)", function(t) {
                            , method: 'POST'
                            , path: '/'
                            , port: 80
+                           , body: 'mamma nostra'
                          }, function(res) {
     t.equal(finishCalled, true);
     t.equal(res.statusCode, 200);
@@ -3790,7 +3804,8 @@ test('define() is backward compatible', function(t) {
     host: 'example.com',
     port: nockDef.port,
     method: nockDef.method,
-    path: nockDef.path
+    path: nockDef.path,
+    body: ""
   }, function(res) {
     t.equal(res.statusCode, 500);
 
@@ -3829,7 +3844,8 @@ test('define() works with non-JSON responses', function(t) {
   var req = new http.request({
     host: 'example.com',
     method: nockDef.method,
-    path: nockDef.path
+    path: nockDef.path,
+    body:"�"
   }, function(res) {
     t.equal(res.statusCode, nockDef.status);
 
@@ -3874,7 +3890,8 @@ test('define() works with binary buffers', function(t) {
   var req = new http.request({
     host: 'example.com',
     method: nockDef.method,
-    path: nockDef.path
+    path: nockDef.path,
+    body: "8001",
   }, function(res) {
     t.equal(res.statusCode, nockDef.status);
 
@@ -4095,9 +4112,9 @@ test("handles post with restify client", function(t) {
 
   var client = restify.createClient({
     url: 'https://www.example.com'
-  })
+  });
 
-  client.post('/post', function(err, req, res) {
+  client.post('/post', function(err, req) {
     req.on('result', function(err, res) {
       res.body = '';
       res.setEncoding('utf8');
@@ -4111,7 +4128,6 @@ test("handles post with restify client", function(t) {
         scope.done();
       });
     });
-
     req.write('hello world');
     req.end();
   });
@@ -4137,14 +4153,15 @@ test("handles get with restify JsonClient", function(t) {
 test("handles post with restify JsonClient", function(t) {
   var scope =
   nock("https://www.example.com").
-    post("/post", {username: 'banana'}).
+    post("/post", { "username": "banana" }).
     reply(200, {post: 'ok'});
 
   var client = restify.createJsonClient({
-    url: 'https://www.example.com'
+    url: 'https://www.example.com',
+    contentType: "application/json"
   })
 
-  client.post('/post', {username: 'banana'}, function(err, req, res, obj) {
+  client.post('/post', { "username": "banana" }, function(err, req, res, obj) {
     t.equal(obj.post, 'ok');
     t.end();
     scope.done();
