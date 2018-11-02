@@ -3319,25 +3319,25 @@ var acceptableLeaks = [
 //
 // });
 //
-function checkDuration(t, ms) {
-  var _end = t.end;
-  var start = process.hrtime();
-  var ended = false;
-  t.end = function () {
-    if (ended) return;
-    ended = true;
-    var fin = process.hrtime(start);
-    var finMs =
-      (fin[0] * 1e+9) +  // seconds -> ms
-      (fin[1] * 1e-6); // nanoseconds -> ms
-
-    /// innaccurate timers
-    ms = ms * 0.9;
-
-    t.ok(finMs >= ms, 'Duration of ' + Math.round(finMs) + 'ms should be longer than ' + ms + 'ms');
-    _end.call(t);
-  };
-}
+// function checkDuration(t, ms) {
+//   var _end = t.end;
+//   var start = process.hrtime();
+//   var ended = false;
+//   t.end = function () {
+//     if (ended) return;
+//     ended = true;
+//     var fin = process.hrtime(start);
+//     var finMs =
+//       (fin[0] * 1e+9) +  // seconds -> ms
+//       (fin[1] * 1e-6); // nanoseconds -> ms
+//
+//     /// innaccurate timers
+//     ms = ms * 0.9;
+//
+//     t.ok(finMs >= ms, 'Duration of ' + Math.round(finMs) + 'ms should be longer than ' + ms + 'ms');
+//     _end.call(t);
+//   };
+// }
 //
 // test('calling delay could cause mikealRequest timeout error', function(t) {
 //   var scope = nock('http://funk')
@@ -4104,357 +4104,357 @@ function checkDuration(t, ms) {
 //   });
 // });
 //
-test("handles post with restify client", function(t) {
-  var scope =
-  nock("https://www.example.com").
-    post("/post", { hello: 'world' }).
-    reply(200, 'post');
-
-  var client = restify.createClient({
-    url: 'https://www.example.com'
-  });
-
-  client.post('/post', { hello: 'world' }, function(err, req, res, obj) {
-    req.on('result', function(err, res) {
-      res.body = '';
-      res.setEncoding('utf8');
-      res.on('data', function(chunk) {
-        res.body += chunk;
-      });
-
-      res.on('end', function() {
-        t.equal(res.body, 'post')
-        t.end();
-        scope.done();
-      });
-    });
-
-    req.write('hello world');
-    req.end();
-  });
-});
-
-test("handles get with restify JsonClient", function(t) {
-  var scope =
-  nock("https://www.example.com").
-    get("/get").
-    reply(200, {get: 'ok'});
-
-  var client = restify.createJsonClient({
-    url: 'https://www.example.com'
-  })
-
-  client.get('/get', function(err, req, res, obj) {
-    t.equal(obj.get, 'ok');
-    t.end();
-    scope.done();
-  });
-});
-
-test("handles post with restify JsonClient", function(t) {
-  var scope =
-  nock("https://www.example.com").
-    post("/post", {username: 'banana'}).
-    reply(200, {post: 'ok'});
-
-  var client = restify.createJsonClient({
-    url: 'https://www.example.com'
-  })
-
-  client.post('/post', {username: 'banana'}, function(err, req, res, obj) {
-    t.equal(obj.post, 'ok');
-    t.end();
-    scope.done();
-  });
-});
-
-test("handles 404 with restify JsonClient", function(t) {
-  var scope =
-  nock("https://www.example.com").
-    put("/404").
-    reply(404);
-
-  var client = restify.createJsonClient({
-    url: 'https://www.example.com'
-  })
-
-  client.put('/404', function(err, req, res, obj) {
-    t.equal(res.statusCode, 404);
-    t.end();
-    scope.done();
-  });
-});
-
-test("handles 500 with restify JsonClient", function(t) {
-  var scope =
-  nock("https://www.example.com").
-    delete("/500").
-    reply(500);
-
-  var client = restify.createJsonClient({
-    url: 'https://www.example.com'
-  })
-
-  client.del('/500', function(err, req, res, obj) {
-    t.equal(res.statusCode, 500);
-    t.end();
-    scope.done();
-  });
-});
-
-test('test request timeout option', function(t) {
-
-  nock('http://example.com')
-    .get('/test')
-    .reply(200, JSON.stringify({ foo: 'bar' }));
-
-  var options = {
-    url: 'http://example.com/test',
-    method: 'GET',
-    timeout: 2000
-  };
-
-  mikealRequest(options, function(err, res, body) {
-    t.strictEqual(err, null);
-    t.equal(body, '{"foo":"bar"}');
-    t.end();
-  });
-});
-
-test('done fails when specified request header is missing', function(t) {
-  nock('http://example.com', {
-    reqheaders: {
-      "X-App-Token": "apptoken",
-      "X-Auth-Token": "apptoken"
-    }
-  })
-  .post('/resource')
-  .reply(200, { status: "ok" });
-
-  var d = domain.create();
-
-  d.run(function() {
-    mikealRequest({
-      method: 'POST',
-      uri: 'http://example.com/resource',
-      headers: {
-        "X-App-Token": "apptoken"
-      }
-    });
-  });
-
-  d.once('error', function(err) {
-    t.ok(err.message.match(/No match/));
-    t.end();
-  });
-});
-
-test('matches request header with regular expression', function(t) {
-  nock('http://example.com', {
-    reqheaders: {
-      "X-My-Super-Power": /.+/
-    }
-  })
-  .post('/superpowers')
-  .reply(200, { status: "ok" });
-
-
-    mikealRequest({
-      method: 'POST',
-      uri: 'http://example.com/superpowers',
-      headers: {
-          "X-My-Super-Power": "mullet growing"
-      }
-    }, function(err, res, body) {
-        t.strictEqual(err, null);
-        t.equal(body, '{"status":"ok"}');
-        t.end();
-    });
-});
-
-test('request header satisfies the header function', function(t) {
-  nock('http://example.com', {
-    reqheaders: {
-      "X-My-Super-Power": function(value) {
-          return value === "mullet growing";
-      }
-    }
-  })
-  .post('/superpowers')
-  .reply(200, { status: "ok" });
-
-
-    mikealRequest({
-      method: 'POST',
-      uri: 'http://example.com/superpowers',
-      headers: {
-          "X-My-Super-Power": "mullet growing"
-      }
-    }, function(err, res, body) {
-        t.strictEqual(err, null);
-        t.equal(body, '{"status":"ok"}');
-        t.end();
-    });
-});
-
-test('done fails when specified request header doesn\'t match regular expression', function(t) {
-    nock('http://example.com', {
-        reqheaders: {
-            "X-My-Super-Power": /Mullet.+/
-        }
-    })
-        .post('/resource')
-        .reply(200, { status: "ok" });
-
-    var d = domain.create();
-
-    d.run(function() {
-        mikealRequest({
-            method: 'POST',
-            uri: 'http://example.com/superpowers',
-            headers: {
-                "X-My-Super-Power": "mullet growing"
-            }
-        });
-    });
-
-    d.once('error', function(err) {
-        t.ok(err.message.match(/No match/));
-        t.end();
-    });
-});
-
-test('done fails when specified request header doesn\'t satisfy the header function', function(t) {
-    nock('http://example.com', {
-        reqheaders: {
-            "X-My-Super-Power": function (value) {
-                return value === 'Mullet Growing';
-            }
-        }
-    })
-        .post('/resource')
-        .reply(200, { status: "ok" });
-
-    var d = domain.create();
-
-    d.run(function() {
-        mikealRequest({
-            method: 'POST',
-            uri: 'http://example.com/superpowers',
-            headers: {
-                "X-My-Super-Power": "mullet growing"
-            }
-        });
-    });
-
-    d.once('error', function(err) {
-        t.ok(err.message.match(/No match/));
-        t.end();
-    });
-});
-
-test('done does not fail when specified request header is not missing', function(t) {
-  nock('http://example.com', {
-    reqheaders: {
-      "X-App-Token": "apptoken",
-      "X-Auth-Token": "apptoken"
-    }
-  })
-  .post('/resource')
-  .reply(200, { status: "ok" });
-
-  mikealRequest({
-    method: 'POST',
-    uri: 'http://example.com/resource',
-    headers: {
-      "X-App-Token": "apptoken",
-      "X-Auth-Token": "apptoken"
-    }
-  }, function(err, res, body) {
-    t.type(err, 'null');
-    t.equal(res.statusCode, 200);
-    t.end();
-  });
-
-});
-
-test('done fails when specified bad request header is present', function (t) {
-  nock('http://example.com', {
-    badheaders: ['cookie']
-  })
-  .post('/resource')
-  .reply(200, { status: 'ok' });
-
-  var d = domain.create();
-
-  d.run(function() {
-    mikealRequest({
-      method: 'POST',
-      uri: 'http://example.com/resource',
-      headers: {
-        'Cookie': 'cookie'
-      }
-    });
-  });
-
-  d.once('error', function (err) {
-    t.ok(err.message.match(/No match/));
-    t.end();
-  });
-});
-
-test('mikeal/request with delayConnection and request.timeout', function(t) {
-  nock("http://some-server.com")
-    .post("/")
-    .delayConnection(1000)
-    .reply(200, {});
-
-  mikealRequest.post({
-      url: "http://some-server.com/",
-      timeout: 10
-    },
-    function (err) {
-      t.type(err, 'Error');
-      t.equal(err && err.code, "ESOCKETTIMEDOUT");
-      t.end();
-  });
-});
-
-test("get correct filtering with scope and request headers filtering", function(t) {
-  var responseText = 'OK!';
-  var responseHeaders = { 'Content-Type': 'text/plain'};
-  var requestHeaders = { host: 'a.subdomain.of.google.com' };
-
-  var scope = nock('http://a.subdomain.of.google.com', {
-      filteringScope: function(scope) {
-        return (/^http:\/\/.*\.google\.com/).test(scope);
-      }
-    })
-    .get('/somepath')
-    .reply(200, responseText, responseHeaders);
-
-  var dataCalled = false;
-  var host = 'some.other.subdomain.of.google.com';
-  var req = http.get({
-    host: host,
-    method: 'GET',
-    path: '/somepath',
-    port: 80
-  }, function(res) {
-    res.on('data', function(data) {
-      dataCalled = true;
-      t.equal(data.toString(), responseText);
-    });
-    res.on('end', function() {
-      t.true(dataCalled);
-      scope.done();
-      t.end();
-    });
-  });
-
-  t.equivalent(req._headers, { host: requestHeaders.host });
-
-});
+// test("handles post with restify client", function(t) {
+//   var scope =
+//   nock("https://www.example.com").
+//     post("/post", 'hello world').
+//     reply(200, 'post');
+//
+//   var client = restify.createClient({
+//     url: 'https://www.example.com'
+//   });
+//
+//   client.post('/post', function(err, req) {
+//     req.on('result', function(err, res) {
+//       res.body = '';
+//       res.setEncoding('utf8');
+//       res.on('data', function(chunk) {
+//         res.body += chunk;
+//       });
+//
+//       res.on('end', function() {
+//         t.equal(res.body, 'post')
+//         t.end();
+//         scope.done();
+//       });
+//     });
+//     req.write('hello world');
+//     req.end();
+//   });
+// });
+//
+// test("handles get with restify JsonClient", function(t) {
+//   var scope =
+//   nock("https://www.example.com").
+//     get("/get").
+//     reply(200, {get: 'ok'});
+//
+//   var client = restify.createJsonClient({
+//     url: 'https://www.example.com'
+//   })
+//
+//   client.get('/get', function(err, req, res, obj) {
+//     t.equal(obj.get, 'ok');
+//     t.end();
+//     scope.done();
+//   });
+// });
+//
+// test("handles post with restify JsonClient", function(t) {
+//   var scope =
+//   nock("https://www.example.com").
+//     post("/post", { "username": "banana" }).
+//     reply(200, {post: 'ok'});
+//
+//   var client = restify.createJsonClient({
+//     url: 'https://www.example.com',
+//     contentType: "application/json"
+//   })
+//
+//   client.post('/post', { "username": "banana" }, function(err, req, res, obj) {
+//     t.equal(obj.post, 'ok');
+//     t.end();
+//     scope.done();
+//   });
+// });
+//
+// test("handles 404 with restify JsonClient", function(t) {
+//   var scope =
+//   nock("https://www.example.com").
+//     put("/404").
+//     reply(404);
+//
+//   var client = restify.createJsonClient({
+//     url: 'https://www.example.com'
+//   })
+//
+//   client.put('/404', function(err, req, res, obj) {
+//     t.equal(res.statusCode, 404);
+//     t.end();
+//     scope.done();
+//   });
+// });
+//
+// test("handles 500 with restify JsonClient", function(t) {
+//   var scope =
+//   nock("https://www.example.com").
+//     delete("/500").
+//     reply(500);
+//
+//   var client = restify.createJsonClient({
+//     url: 'https://www.example.com'
+//   })
+//
+//   client.del('/500', function(err, req, res, obj) {
+//     t.equal(res.statusCode, 500);
+//     t.end();
+//     scope.done();
+//   });
+// });
+//
+// test('test request timeout option', function(t) {
+//
+//   nock('http://example.com')
+//     .get('/test')
+//     .reply(200, JSON.stringify({ foo: 'bar' }));
+//
+//   var options = {
+//     url: 'http://example.com/test',
+//     method: 'GET',
+//     timeout: 2000
+//   };
+//
+//   mikealRequest(options, function(err, res, body) {
+//     t.strictEqual(err, null);
+//     t.equal(body, '{"foo":"bar"}');
+//     t.end();
+//   });
+// });
+//
+// test('done fails when specified request header is missing', function(t) {
+//   nock('http://example.com', {
+//     reqheaders: {
+//       "X-App-Token": "apptoken",
+//       "X-Auth-Token": "apptoken"
+//     }
+//   })
+//   .post('/resource')
+//   .reply(200, { status: "ok" });
+//
+//   var d = domain.create();
+//
+//   d.run(function() {
+//     mikealRequest({
+//       method: 'POST',
+//       uri: 'http://example.com/resource',
+//       headers: {
+//         "X-App-Token": "apptoken"
+//       }
+//     });
+//   });
+//
+//   d.once('error', function(err) {
+//     t.ok(err.message.match(/No match/));
+//     t.end();
+//   });
+// });
+//
+// test('matches request header with regular expression', function(t) {
+//   nock('http://example.com', {
+//     reqheaders: {
+//       "X-My-Super-Power": /.+/
+//     }
+//   })
+//   .post('/superpowers')
+//   .reply(200, { status: "ok" });
+//
+//
+//     mikealRequest({
+//       method: 'POST',
+//       uri: 'http://example.com/superpowers',
+//       headers: {
+//           "X-My-Super-Power": "mullet growing"
+//       }
+//     }, function(err, res, body) {
+//         t.strictEqual(err, null);
+//         t.equal(body, '{"status":"ok"}');
+//         t.end();
+//     });
+// });
+//
+// test('request header satisfies the header function', function(t) {
+//   nock('http://example.com', {
+//     reqheaders: {
+//       "X-My-Super-Power": function(value) {
+//           return value === "mullet growing";
+//       }
+//     }
+//   })
+//   .post('/superpowers')
+//   .reply(200, { status: "ok" });
+//
+//
+//     mikealRequest({
+//       method: 'POST',
+//       uri: 'http://example.com/superpowers',
+//       headers: {
+//           "X-My-Super-Power": "mullet growing"
+//       }
+//     }, function(err, res, body) {
+//         t.strictEqual(err, null);
+//         t.equal(body, '{"status":"ok"}');
+//         t.end();
+//     });
+// });
+//
+// test('done fails when specified request header doesn\'t match regular expression', function(t) {
+//     nock('http://example.com', {
+//         reqheaders: {
+//             "X-My-Super-Power": /Mullet.+/
+//         }
+//     })
+//         .post('/resource')
+//         .reply(200, { status: "ok" });
+//
+//     var d = domain.create();
+//
+//     d.run(function() {
+//         mikealRequest({
+//             method: 'POST',
+//             uri: 'http://example.com/superpowers',
+//             headers: {
+//                 "X-My-Super-Power": "mullet growing"
+//             }
+//         });
+//     });
+//
+//     d.once('error', function(err) {
+//         t.ok(err.message.match(/No match/));
+//         t.end();
+//     });
+// });
+//
+// test('done fails when specified request header doesn\'t satisfy the header function', function(t) {
+//     nock('http://example.com', {
+//         reqheaders: {
+//             "X-My-Super-Power": function (value) {
+//                 return value === 'Mullet Growing';
+//             }
+//         }
+//     })
+//         .post('/resource')
+//         .reply(200, { status: "ok" });
+//
+//     var d = domain.create();
+//
+//     d.run(function() {
+//         mikealRequest({
+//             method: 'POST',
+//             uri: 'http://example.com/superpowers',
+//             headers: {
+//                 "X-My-Super-Power": "mullet growing"
+//             }
+//         });
+//     });
+//
+//     d.once('error', function(err) {
+//         t.ok(err.message.match(/No match/));
+//         t.end();
+//     });
+// });
+//
+// test('done does not fail when specified request header is not missing', function(t) {
+//   nock('http://example.com', {
+//     reqheaders: {
+//       "X-App-Token": "apptoken",
+//       "X-Auth-Token": "apptoken"
+//     }
+//   })
+//   .post('/resource')
+//   .reply(200, { status: "ok" });
+//
+//   mikealRequest({
+//     method: 'POST',
+//     uri: 'http://example.com/resource',
+//     headers: {
+//       "X-App-Token": "apptoken",
+//       "X-Auth-Token": "apptoken"
+//     }
+//   }, function(err, res, body) {
+//     t.type(err, 'null');
+//     t.equal(res.statusCode, 200);
+//     t.end();
+//   });
+//
+// });
+//
+// test('done fails when specified bad request header is present', function (t) {
+//   nock('http://example.com', {
+//     badheaders: ['cookie']
+//   })
+//   .post('/resource')
+//   .reply(200, { status: 'ok' });
+//
+//   var d = domain.create();
+//
+//   d.run(function() {
+//     mikealRequest({
+//       method: 'POST',
+//       uri: 'http://example.com/resource',
+//       headers: {
+//         'Cookie': 'cookie'
+//       }
+//     });
+//   });
+//
+//   d.once('error', function (err) {
+//     t.ok(err.message.match(/No match/));
+//     t.end();
+//   });
+// });
+//
+// test('mikeal/request with delayConnection and request.timeout', function(t) {
+//   nock("http://some-server.com")
+//     .post("/")
+//     .delayConnection(1000)
+//     .reply(200, {});
+//
+//   mikealRequest.post({
+//       url: "http://some-server.com/",
+//       timeout: 10
+//     },
+//     function (err) {
+//       t.type(err, 'Error');
+//       t.equal(err && err.code, "ESOCKETTIMEDOUT");
+//       t.end();
+//   });
+// });
+//
+// test("get correct filtering with scope and request headers filtering", function(t) {
+//   var responseText = 'OK!';
+//   var responseHeaders = { 'Content-Type': 'text/plain'};
+//   var requestHeaders = { host: 'a.subdomain.of.google.com' };
+//
+//   var scope = nock('http://a.subdomain.of.google.com', {
+//       filteringScope: function(scope) {
+//         return (/^http:\/\/.*\.google\.com/).test(scope);
+//       }
+//     })
+//     .get('/somepath')
+//     .reply(200, responseText, responseHeaders);
+//
+//   var dataCalled = false;
+//   var host = 'some.other.subdomain.of.google.com';
+//   var req = http.get({
+//     host: host,
+//     method: 'GET',
+//     path: '/somepath',
+//     port: 80
+//   }, function(res) {
+//     res.on('data', function(data) {
+//       dataCalled = true;
+//       t.equal(data.toString(), responseText);
+//     });
+//     res.on('end', function() {
+//       t.true(dataCalled);
+//       scope.done();
+//       t.end();
+//     });
+//   });
+//
+//   t.equivalent(req._headers, { host: requestHeaders.host });
+//
+// });
 
 // test('mocking succeeds even when mocked and specified request header names have different cases', function(t) {
 //   nock('http://example.com', {
@@ -5081,22 +5081,22 @@ test("get correct filtering with scope and request headers filtering", function(
 //   });
 // });
 //
-// test('you must setup an interceptor for each request', function(t) {
-//   var scope = nock('http://www.example.com')
-//      .get('/hey')
-//      .reply(200, 'First match');
-//
-//   mikealRequest.get('http://www.example.com/hey', function(error, res, body) {
-//     t.equal(res.statusCode, 200);
-//     t.equal(body, 'First match', 'should match first request response body');
-//
-//     mikealRequest.get('http://www.example.com/hey', function(error, res, body) {
-//       t.equal(error && error.toString(), 'Error: Nock: No match for request ' + JSON.stringify({"method":"GET","url":"http://www.example.com/hey","headers":{"host":"www.example.com"}}, null, 2));
-//       scope.done();
-//       t.end();
-//     });
-//   });
-// });
+test('you must setup an interceptor for each request', function(t) {
+  var scope = nock('http://www.example.com')
+     .get('/hey')
+     .reply(200, 'First match');
+
+  mikealRequest.get('http://www.example.com/hey', function(error, res, body) {
+    t.equal(res.statusCode, 200);
+    t.equal(body, 'First match', 'should match first request response body');
+
+    mikealRequest.get('http://www.example.com/hey', function(error, res, body) {
+      t.equal(error && error.toString(), 'Error: Nock: No match for request ' + JSON.stringify({"method":"GET","url":"http://www.example.com/hey","headers":{"host":"www.example.com"}}, null, 2));
+      scope.done();
+      t.end();
+    });
+  });
+});
 //
 // test('calling socketDelay will emit a timeout', function (t) {
 //     nock('http://www.example.com')
@@ -5720,14 +5720,14 @@ test("get correct filtering with scope and request headers filtering", function(
 //   }
 // })
 
-test("teardown", function(t) {
-  var leaks = Object.keys(global)
-    .splice(globalCount, Number.MAX_VALUE);
-
-  leaks = leaks.filter(function(key) {
-    return acceptableLeaks.indexOf(key) == -1;
-  });
-
-  t.deepEqual(leaks, [], 'No leaks');
-  t.end();
-});
+// test("teardown", function(t) {
+//   var leaks = Object.keys(global)
+//     .splice(globalCount, Number.MAX_VALUE);
+//
+//   leaks = leaks.filter(function(key) {
+//     return acceptableLeaks.indexOf(key) == -1;
+//   });
+//
+//   t.deepEqual(leaks, [], 'No leaks');
+//   t.end();
+// });
