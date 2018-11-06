@@ -1,6 +1,6 @@
 {
-  "name": "@wework/nock",
-  "description": "HTTP server mocking and expectations library for Node.js",
+  "name": "nock",
+  "description": "PATCHED - HTTP server mocking and expectations library for Node.js",
   "tags": [
     "Mock",
     "HTTP",
@@ -8,13 +8,13 @@
     "isolation"
   ],
   "version": "0.0.0-development",
-  "author": "Pedro Teixeira <pedro.teixeira@gmail.com>",
+  "author": "Test Infrastructure <testinfra@wework.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nock/nock.git"
+    "url": "https://github.com/danksim/nock.git"
   },
   "bugs": {
-    "url": "http://github.com/nock/nock/issues"
+    "url": "http://github.com/danksim/nock/issues"
   },
   "engines": [
     "node >= 4.0"
