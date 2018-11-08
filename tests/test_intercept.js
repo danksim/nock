@@ -2964,7 +2964,7 @@ test("allow unmocked option works with https", function(t) {
 
 // TODO: remove skip as part of https://github.com/nock/nock/issues/1077
 // test('allow unmocked post with json data', {skip: process.env.AIRPLANE}, function(t) {
-test('allow unmocked post with json data', {skip: true}, function(t) {
+test('allow unmocked post with json data', function(t) {
   nock('https://httpbin.org', { allowUnmocked: true }).
     get("/abc").
     reply(200, "Hey!");
@@ -2983,7 +2983,7 @@ test('allow unmocked post with json data', {skip: true}, function(t) {
 
 // TODO: remove skip as part of https://github.com/nock/nock/issues/1077
 // test('allow unmocked passthrough with mismatched bodies', {skip: process.env.AIRPLANE}, function(t) {
-test('allow unmocked passthrough with mismatched bodies', {skip: true}, function(t) {
+test('allow unmocked passthrough with mismatched bodies', function(t) {
   nock('http://httpbin.org', { allowUnmocked: true }).
     post("/post", {some: 'otherdata'}).
     reply(404, "Hey!");
@@ -5719,6 +5719,63 @@ test('should throw an error when persist flag isn\'t a boolean', function (t) {
     t.end();
   }
 })
+
+test('match endpoint and body', function(t) {
+  nock('http://abc.com', {allowUnmocked: true})
+    .get('/goodbye')
+    .reply(200, 'Hello World!');
+  nock('http://abc.com', {allowUnmocked: true})
+    .get('/goodbye.json')
+    .reply(200, {Hello: 'World!'});
+
+  nock('http://abc.com', {allowUnmocked: true})
+    .post('/user', { body: 'bar',
+                     title: 'foo',
+                     userId: 1 })
+    .reply(202, { result:
+                  { user:
+                    { body: 'bar',
+                      title: 'foo',
+                      userId: 8,
+                    },
+                  },
+              });
+
+  var optionsGET = {
+    method: 'GET',
+    uri: 'http://abc.com/goodbye',
+  };
+  var optionsGETJSON = {
+    method: 'GET',
+    uri: 'http://abc.com/goodbye.json',
+  };
+  var options = {
+    method: 'POST',
+    uri: 'http://abc.com/user',
+    json: { body: 'bar',
+            title: 'foo',
+            userId: 1 }
+  };
+
+  mikealRequest(optionsGET, function(err, resp, body) {
+    t.equal(200, resp.statusCode)
+  })
+  mikealRequest(optionsGETJSON, function(err, resp, body) {
+    t.equal(200, resp.statusCode)
+  })
+  mikealRequest(options, function(err, resp, body) {
+    t.equal(202, resp.statusCode)
+    t.deepEqual(resp.body, { result:
+                             { user:
+                               { body: 'bar',
+                                title: 'foo',
+                                userId: 8,
+                             },
+                           },
+                       })
+    t.end();
+  });
+});
 
 test("teardown", function(t) {
   var leaks = Object.keys(global)
